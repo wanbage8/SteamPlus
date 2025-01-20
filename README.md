@@ -1,6 +1,8 @@
 # 让Steam兼容大屏
 <hr/>
+
 一个免费轻量小巧的用户脚本，用于增强Steam体验
+[GreasyFork链接](https://greasyfork.org/zh-CN/scripts/524321-%E4%BC%98%E5%8C%96steam%E7%95%8C%E9%9D%A2)
 
 它为Steam游戏详情页添加以下功能
 
