@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name		 优化Steam界面
 // @namespace    http://tampermonkey.net/
-// @version      0.3
+// @version      0.3.1
 // @description  优化Steam界面大屏Plus版
 // @author       Mr.Wan
 // @homepageURL     http://github.com/wanbage8
@@ -545,6 +545,10 @@
 			"display": "block",
 			"float": "left",
 			"margin-right": "5px",
+		},
+
+		".profile_flag": {
+			"border-radius": "0px !important",
 		}
 
 	};
