@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name		 优化Steam界面
 // @namespace    http://tampermonkey.net/
-// @version      0.3.1
+// @version      0.4
 // @description  优化Steam界面大屏Plus版
 // @author       Mr.Wan
 // @homepageURL     http://github.com/wanbage8
@@ -33,7 +33,8 @@
 		#Reviews_summary > div > div.leftcol {width:75%;}
 		.rightcol.recent_reviews {width:calc(25% - 14px);}
 		.review_box > div > .rightcol {width:calc(100% - 226px);}
-		#highlight_strip_scroll {transition:0s !important;}
+		#highlight_strip_scroll,
+		 .forum_topic_tooltip {transition:0s !important;}
 		.slider_ctn .handle, p {font-size: 15px;}
 
 		.but {
@@ -313,6 +314,14 @@
 		.profile_subpage_column .profile_small_header_bg {
 			background-image:initial;
 		}
+		
+		.profile_flag {
+			border-radius: 0px !important;
+		}
+		
+		.browse_content .recommendation .recommendation_link {
+			width: 100%;
+		}
 `)
 	document.body.insertAdjacentHTML("beforeend", `<div class="wan-box" style="transition: 0s !important;"><h2 style="text-align: center;font-size: 26px;color: #000">Steam大屏Plus</h2><label for="range">页面宽度<input type="range" min="10" max="100" value="64" id="range"><span id="rangeNum">64</span><span id="unit">%视口宽度</span></label><div class="switch-container"><div class="flex"><span>是否启用全局圆角</span><label class="switch"><input type="checkbox" id="radius" checked><span class="sliderBut"></span></label></div><label for="radiusInp" title="设置圆角大小单位像素">圆角大小<input type="range" min="0" max="25" value="5" id="radiusInp"><span id="radiusNum">5</span>px</label></div><div class="switch-container"><div class="flex"><span>是否启用全局过渡</span><label class="switch"><input type="checkbox" id="transition" checked><span class="sliderBut"></span></label></div><label for="transitionInp" title="设置过渡时长单位秒(过渡时间过长可能导致某些元素响应慢)">过渡时长<input type="range" min="0" max="5" step="0.1" value="0.3" id="transitionInp"><span id="transitionNum">0.3</span>s<div>过渡曲线<label for="ease-in-out" class="radio-mar">快=>慢=>快<input type="radio" name="time" data-name="ease-in-out" id="ease-in-out" checked></label><label for="ease-out" class="radio-mar">慢=>快<input type="radio" name="time" data-name="ease-out" id="ease-out"></label><label for="linear" class="radio-mar">匀速<input type="radio" name="time" data-name="linear" id="linear"></label></div></label></div><div class="wan-box-footer"><button class="button" id="ok">确定</button><button class="button" id="no">取消</button><button class="button" id="reset" title="重置为Steam默认宽度">重置</button></div></div>`);
 	let mainElement = document.querySelector(".game_area_features_list_ctn")?.cloneNode(true);
@@ -546,11 +555,67 @@
 			"float": "left",
 			"margin-right": "5px",
 		},
+		
+		"#AppHubContent .maincontent .rightcol.responsive_local_menu": {
+			"width": "calc(30% - 18px)",
+		},
 
-		".profile_flag": {
-			"border-radius": "0px !important",
+		"#AppHubContent .rightcol.responsive_local_menu": {
+			"width": "calc(30% - 18px)",
+		},
+
+		".discussionSearchTextContainer": {
+			"background-size":"100% 100%",
+			"width": "100%",
+		},
+
+		".discussionSearchText.searchText": {
+			"width": "calc(100% - 80px)",
+			"left": "17px",
+		},
+
+		".discussionSearchTextSubmitImg": {
+			"left": "90%",
+		},
+
+		".forum_op": {
+			"max-width": "initial",
+			"background-size": "100%"
+		},
+
+		".creator_announcement_browse_adjustment .browse_container": {
+			"transform": "initial",
+			"width": "100%",
+		},
+
+		"body.v6.curator .page_content.browse_reviews": {
+			"transform": "translateX(-160px)",
+		},
+
+		".saleEventBannerBig": {
+			"width": "100%",
+		},
+
+		".saleEventBannerMobile": {
+			"width": "100%",
+		},
+
+		".game_area_description":{
+			"width": "100%",
+		},
+
+		".game_area_description img.bb_img":{
+			"width": "100%",
+		},
+
+		"#review_histogram_rollup_section":{
+			"width": "70%",
+		},
+
+		"#review_histogram_recent_section": {
+			"width": "30%",
 		}
-
+		
 	};
 
 	function applyStyles(rules) {
@@ -584,6 +649,7 @@
 	let data = JSON.parse(localStorage.getItem("state"));
 	let unit = document.querySelector("#unit");
 	let timeOut = document.querySelectorAll("#transitionNum~div>label>input");
+	let headerStandard = document.querySelector(".apphub_HeaderStandardTop")
 	let appId = location.href.match(/app\/(\d+)/);
 	let num = 0;
 	let timeStatus = "ease-in-out"
@@ -711,8 +777,7 @@
 		localStorage.setItem("t", "t")
 	}
 
-	if(appId) {
-		let headerStandard = document.querySelector(".apphub_HeaderStandardTop")
+	if(appId && headerStandard) {
 		headerStandard.insertAdjacentHTML("afterbegin",`<div class="apphub_OtherSiteInfo" style="margin-left: 10px" title="跳转到小黑盒"><a class="btnv6_blue_hoverfade btn_medium" href="https://www.xiaoheihe.cn/app/topic/game/pc/${appId[1]}"><img style="width: 29px;height: 29px;" src="https://imgheybox.max-c.com/oa/2024/11/27/3912834da32296bd985281f8944e75fc.ico" alt="小黑盒"></a></div>`)
 		headerStandard.insertAdjacentHTML("afterbegin",`<div class="apphub_OtherSiteInfo" style="margin-left: 10px" title="跳转到SteamDB"><a class="btnv6_blue_hoverfade btn_medium" href="https://steamdb.info/app/${appId[1]}"><img style="width: 29px;height: 29px;" src="https://steamdb.info/static/logos/vector_prefers_schema.svg" alt="SteamDB"></a></div>`)
 	}
