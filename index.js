@@ -13,6 +13,8 @@
 // @grant           GM_xmlhttpRequest
 // @connect         steamcommunity.com
 // @connect         buff.163.com
+// @connect         api.steampowered.com
+// @connect         steamcharts.com
 // @downloadURL     https://update.greasyfork.org/scripts/524321/%E4%BC%98%E5%8C%96Steam%E7%95%8C%E9%9D%A2.user.js
 // @updateURL       https://update.greasyfork.org/scripts/524321/%E4%BC%98%E5%8C%96Steam%E7%95%8C%E9%9D%A2.meta.js
 // ==/UserScript==
@@ -467,20 +469,6 @@
 
 		}
 `)
-	document.body.insertAdjacentHTML("beforeend", `<div class="wan-box" style="transition: 0s !important;"><h2 style="text-align: center;font-size: 26px;color: #000">Steam大屏Plus</h2><label for="range">页面宽度<input type="range" min="10" max="100" value="64" id="range"><span id="rangeNum">64</span><span id="unit">%视口宽度</span></label><div class="switch-container"><div class="flex"><span>是否启用全局圆角</span><label class="switch"><input type="checkbox" id="radius" checked><span class="sliderBut"></span></label></div><label for="radiusInp" title="设置圆角大小单位像素">圆角大小<input type="range" min="0" max="25" value="5" id="radiusInp"><span id="radiusNum">5</span>px</label></div><div class="switch-container"><div class="flex"><span>是否启用全局过渡</span><label class="switch"><input type="checkbox" id="transition" checked><span class="sliderBut"></span></label></div><label for="transitionInp" title="设置过渡时长单位秒(过渡时间过长可能导致某些元素响应慢)">过渡时长<input type="range" min="0" max="5" step="0.1" value="0.3" id="transitionInp"><span id="transitionNum">0.3</span>s<div>过渡曲线<label for="ease-in-out" class="radio-mar">快=>慢=>快<input type="radio" name="time" data-name="ease-in-out" id="ease-in-out" checked></label><label for="ease-out" class="radio-mar">慢=>快<input type="radio" name="time" data-name="ease-out" id="ease-out"></label><label for="linear" class="radio-mar">匀速<input type="radio" name="time" data-name="linear" id="linear"></label></div></label></div><div class="wan-box-footer"><button class="button" id="ok">确定</button><button class="button" id="no">取消</button><button class="button" id="reset" title="重置为Steam默认宽度">重置</button></div></div>`);
-	let mainElement = document.querySelector(".game_area_features_list_ctn")?.cloneNode(true);
-	if (mainElement) {
-		let mainElementChildren = Array.from(mainElement.children)
-		let tabMain = document.getElementById("glanceCtnResponsiveRight")
-		tabMain.insertAdjacentHTML("beforeend", `<div class="glance_tags_ctn popular_tags_ctn"><div class="glance_tags_label">游戏属性：</div><div  class="glance_tags popular_tags" data-wan style="display: flex;flex-wrap: wrap;height: auto"></div></div>`)
-		for (let i = 0; i < mainElementChildren.length; i++) {
-			mainElementChildren[i].classList.add("but")
-			mainElementChildren[i].lastElementChild.style.lineHeight = "30px"
-			let tabElement = document.querySelector("[data-wan]")
-			tabElement.appendChild(mainElementChildren[i])
-
-		}
-	}
 
 	/*======修改页面宽度======*/
 	/*
@@ -762,6 +750,7 @@
 
 	};
 
+
 	function applyStyles(rules) {
 		for (let selector in rules) {
 			const elements = document.querySelectorAll(selector);
@@ -780,6 +769,8 @@
 	applyStyles(combinedRules);
 
 	//======自定义页面======//
+	document.body.insertAdjacentHTML("beforeend", `<div class="wan-box" style="transition: 0s !important;"><h2 style="text-align: center;font-size: 26px;color: #000">Steam大屏Plus</h2><label for="range">页面宽度<input type="range" min="10" max="100" value="64" id="range"><span id="rangeNum">64</span><span id="unit">%视口宽度</span></label><div class="switch-container"><div class="flex"><span>是否启用全局圆角</span><label class="switch"><input type="checkbox" id="radius" checked><span class="sliderBut"></span></label></div><label for="radiusInp" title="设置圆角大小单位像素">圆角大小<input type="range" min="0" max="25" value="5" id="radiusInp"><span id="radiusNum">5</span>px</label></div><div class="switch-container"><div class="flex"><span>是否启用全局过渡</span><label class="switch"><input type="checkbox" id="transition" checked><span class="sliderBut"></span></label></div><label for="transitionInp" title="设置过渡时长单位秒(过渡时间过长可能导致某些元素响应慢)">过渡时长<input type="range" min="0" max="5" step="0.1" value="0.3" id="transitionInp"><span id="transitionNum">0.3</span>s<div>过渡曲线<label for="ease-in-out" class="radio-mar">快=>慢=>快<input type="radio" name="time" data-name="ease-in-out" id="ease-in-out" checked></label><label for="ease-out" class="radio-mar">慢=>快<input type="radio" name="time" data-name="ease-out" id="ease-out"></label><label for="linear" class="radio-mar">匀速<input type="radio" name="time" data-name="linear" id="linear"></label></div></label></div><div class="wan-box-footer"><button class="button" id="ok">确定</button><button class="button" id="no">取消</button><button class="button" id="reset" title="重置为Steam默认宽度">重置</button></div></div>`);
+
 	let ranges = document.querySelectorAll("input[type='range']");
 	let range = document.querySelector("#range");
 	let radiusInp = document.querySelector("#radiusInp");
@@ -880,12 +871,11 @@
 			}
 			num++
 		}
-		unit.innerText = state.range <= 100 ? "%视口宽度" : "px"
-
+		unit.innerText = state?.range <= 100 ? "%视口宽度" : "px"
 	})
+
 	let move = false;
 	let offset = [0, 0];
-
 	wanBox.addEventListener('mousedown', function (e) {
 		if (e.target !== this && !e.target.closest('input[type="range"]')) {
 			move = true;
@@ -919,7 +909,8 @@
 		ShowAlertDialog('注意', '按下“Ctrl+Alt+A”键即可呼出Steam大屏Plus菜单', "明白！");
 		localStorage.setItem("t", "t")
 	}
-//============================= csgo市场=======================//
+
+//=============================游戏详情页&csgo市场=======================//
 	let appId = steamURL.match(/app\/(\d+)/);
 	let community = /https:\/\/steamcommunity.com\/market\/listings\/730/.test(steamURL)
 	let headerStandard = document.querySelector(".apphub_HeaderStandardTop")
@@ -928,14 +919,112 @@
 	let tableMain = document.querySelector(".market_commodity_order_block") || document.getElementById("largeiteminfo_warning")
 	let csgoName = ""
 	let csgoId
+
+	/**
+	 * 传入csgo磨损度返回对应的词语
+	 * @param {Float} num -武器磨损度
+	 * @return {String<崭新出厂|略有磨损|久经沙场|破损不堪|战痕累累|"">}
+	 * */
+	function csgoAbrasion(num) {
+		if (0 <= num && num < 0.07) return "崭新出厂";
+		else if (0.07 <= num && num < 0.15) return "略有磨损";
+		else if (0.15 <= num && num < 0.37) return "久经沙场";
+		else if (0.37 <= num && num < 0.44) return "破损不堪";
+		else if (0.44 <= num && num <= 1) return "战痕累累";
+		else return "";
+	}
+
+	/**
+	 * 消息提示
+	 * @param {NodeList} dom -显示消息的容器
+	 * @param {String<Selection>} node -消息内容
+	 * @param {String<JSON>} [options] -额外配置
+	 * */
+	function showMsg(dom, node, options) {
+		let container = document.querySelectorAll(dom)
+		for (let i = 0; i < container.length; i++) {
+			if (document.querySelectorAll(dom)[i].dataset.msg) {
+				container[i].innerHTML = document.querySelectorAll(dom)[i].dataset.msg
+				continue
+			}
+			container[i].innerHTML = node
+		}
+	}
+
+	/**
+	 * 数字单位转换为万
+	 * @param {Number} number -要转换的数字
+	 * @param {Number} [decimals=2] -要省略的位数
+	 * */
+
+	function numberPro(number, decimals = 2) {
+		if (typeof number !== 'number' || isNaN(number)) {
+			throw new Error('提供的号码无效');
+		}
+
+		const tenThousand = 10000;
+
+		if (number >= tenThousand) {
+			const formattedNumber = (number / tenThousand).toFixed(decimals);
+			// 如果没有小数部分，则去掉小数点和后面的0
+			return parseFloat(formattedNumber) % 1 === 0 ? parseInt(formattedNumber, 10) + '万' : formattedNumber + '万';
+		} else {
+			return number.toString();
+		}
+	}
+
 	if (appId && headerStandard) {
 		// 跳转启发来自 https://www.xiaoheihe.cn/app/bbs/link/144510651
 		headerStandard.insertAdjacentHTML("afterbegin", `<div class="apphub_OtherSiteInfo" style="margin-left: 10px" title="跳转到小黑盒"><a class="btnv6_blue_hoverfade btn_medium" href="https://www.xiaoheihe.cn/app/topic/game/pc/${appId[1]}"><img style="width: 29px;height: 29px;" src="https://imgheybox.max-c.com/oa/2024/11/27/3912834da32296bd985281f8944e75fc.ico" alt="小黑盒"></a></div>`)
 		headerStandard.insertAdjacentHTML("afterbegin", `<div class="apphub_OtherSiteInfo" style="margin-left: 10px" title="跳转到SteamDB"><a class="btnv6_blue_hoverfade btn_medium" href="https://steamdb.info/app/${appId[1]}"><img style="width: 29px;height: 29px;" src="https://steamdb.info/static/logos/vector_prefers_schema.svg" alt="SteamDB"></a></div>`)
+		let userPlay = document.querySelector(".glance_ctn_responsive_left")
+		userPlay.insertAdjacentHTML("afterbegin", `<div class="dev_row" style="margin-top: 10px"><div class="subtitle column">在线人数:</div><div class="summary column" id="user-num" style="color: #8f98a0">查询中...</div></div><div class="dev_row"><div class="subtitle column">今日峰值:</div><div class="summary column user-num-max" style="color: #8f98a0">查询中...</div></div><div class="dev_row"><div class="subtitle column">历史峰值:</div><div class="summary column user-num-max" style="color: #8f98a0">查询中...</div></div>`)
+
+		// 当前游戏在线人数
+		GM_xmlhttpRequest({
+			method: "GET",
+			url: `https://api.steampowered.com/ISteamUserStats/GetNumberOfCurrentPlayers/v1/?appid=${appId[1]}`,
+			onload: function (res) {
+				let data = JSON.parse(res.response)
+				let msg = document.getElementById("user-num")
+				if (data.response.result !== 1) {
+					showMsg("#user-num", "查询结果异常")
+					return;
+				}
+				msg.innerText = numberPro(data.response.player_count) || "查询结果异常"
+
+			},
+			onerror: function (error) {
+				console.error(error)
+				showMsg("#user-num", "查询结果错误")
+			}
+		});
+
+		GM_xmlhttpRequest({
+			method: "GET",
+			url: `https://steamcharts.com/app/${appId[1]}`,
+			onload: function (res) {
+				let userPlayArr
+				try {
+					let data = res.responseText
+					userPlayArr = data.match(/(?<="num">)(\d+)/g)
+					let userPlayDom = document.querySelectorAll(".user-num-max")
+					userPlayDom[0].textContent = numberPro(+userPlayArr[1])
+					userPlayDom[1].textContent = numberPro(+userPlayArr[2])
+				} catch (e) {
+					showMsg(".user-num-max", "查询失败")
+					console.log(e)
+				}
+			},
+			onerror: function (error) {
+				console.error(error)
+				showMsg(".user-num-max", "查询失败")
+			}
+		});
+
 	} else if (community && communityName) {
 		// 延时加载 等待元素加载完成
 		setTimeout(function () {
-
 			main.insertAdjacentHTML("beforeend", `<h2 class="market_section_title">网易BUFF</h2><span id="BUFF-total"></span><div id="searchResultsRows" style=""><div class="market_listing_table_header"><div class="market_listing_price_listings_block"><span class="market_listing_right_cell market_listing_action_buttons">跳转到BUFF</span><span class="market_listing_right_cell market_listing_their_price" style="text-align: center">价格</span><span class="market_listing_right_cell market_listing_their_price" style="width: 220px;text-align: center">磨损度</span></div><div><span class="market_listing_header_namespacer"></span>名称</div></div><div id="BUFF-body"></div><div id="content_loading" class="page_content_ctn dark" style="display: block;"><div class="home_page_content more_content" id="BUFF-loading"><div class="LoadingWrapper"><div class="LoadingThrobber"><div class="Bar Bar1"></div><div class="Bar Bar2"></div><div class="Bar Bar3"></div></div><div class="BUFF-msg LoadingText">正在加载更多内容…</div></div></div></div></div><div id="BUFF-up">⬆️</div>`)
 			tableMain.insertAdjacentHTML("afterbegin", `<div class="market_commodity_orders_table_container"><table class="market_commodity_orders_table"><tbody id="BUFF-table"><tr><th align="right">编号</th><th align="right">Steam价格</th><th align="right">Buff价格</th><th align="right">利润</th><th align="right">折扣率</th></tr><tr class="BUFF-msg" id="BUFF-tablet-msg"><th colspan="5">查询中...</th></tr></tbody></table></div>`)
 
@@ -985,9 +1074,11 @@
 					console.log(data)
 					if (data.code !== "OK") {
 						showMsg(".BUFF-msg", `请求ID异常，异常信息：${data.error} 状态码：${data.code}`, data)
+						sliderObserver.unobserve(BUFFloading)
 						return
 					} else if (data.data.items.length === 0) {
 						showMsg(".BUFF-msg", `未查询到该商品`)
+						sliderObserver.unobserve(BUFFloading)
 						return;
 					}
 
@@ -1018,41 +1109,9 @@
 				onerror(response) {
 					console.error(response)
 					showMsg(".BUFF-msg", `查询ID数据错误 请查看控制台`)
-
+					sliderObserver.unobserve(BUFFloading)
 				}
 			});
-
-			/**
-			 * 传入csgo磨损度返回对应的词语
-			 * @param {Float} num -武器磨损度
-			 * @return {String<崭新出厂|略有磨损|久经沙场|破损不堪|战痕累累|"">}
-			 * */
-			function csgoAbrasion(num) {
-				if (0 <= num && num < 0.07) return "崭新出厂";
-				else if (0.07 <= num && num < 0.15) return "略有磨损";
-				else if (0.15 <= num && num < 0.37) return "久经沙场";
-				else if (0.37 <= num && num < 0.44) return "破损不堪";
-				else if (0.44 <= num && num <= 1) return "战痕累累";
-				else return "";
-			}
-
-			/**
-			 * 消息提示
-			 * @param {NodeList} dom -显示消息的容器
-			 * @param {String<NodeList>} node -消息内容
-			 * @param {String<JSON>} [options] -额外配置
-			 * */
-			function showMsg(dom, node, options) {
-				let container = document.querySelectorAll(dom)
-				for (let i = 0; i < container.length; i++) {
-					if (document.querySelectorAll(dom)[i].dataset.msg){
-						container[i].innerHTML = document.querySelectorAll(dom)[i].dataset.msg
-						continue
-					}
-					container[i].innerHTML = node
-				}
-				sliderObserver.unobserve(BUFFloading)
-			}
 
 			function getBUFFList() {
 				GM_xmlhttpRequest({
@@ -1063,12 +1122,14 @@
 						console.log(data)
 						if (data.code !== "OK") {
 							showMsg(".BUFF-msg", `请求列表异常，异常信息：${data.error} 状态码：${data.code}`, data)
+							sliderObserver.unobserve(BUFFloading)
 							return
 						} else if (pageNum * 10 >= data.data.total_count) {
 							showMsg(".LoadingText", `没有更多数据了`)
 							sliderObserver.unobserve(BUFFloading)
 						} else if (data.data.items.length === 0) {
 							showMsg(".BUFF-msg", `未查询到该商品`)
+							sliderObserver.unobserve(BUFFloading)
 							return
 						}
 
@@ -1114,6 +1175,7 @@
 					onerror(response) {
 						console.error(response)
 						showMsg(".BUFF-msg", `列表数据错误 请查看控制台`)
+						sliderObserver.unobserve(BUFFloading)
 					}
 				})
 			}
