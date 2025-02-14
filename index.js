@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name            Steam增强器
 // @namespace       http://tampermonkey.net/
-// @version         1.2
+// @version         1.3.1
 // @description     该脚本能够放大Steam平台的大部分界面元素，提升阅读和操作体验；在CSGO社区市场详情页显示Buff平台的价格对比并提供跳转链接，方便用户快速查看和购买；同时在游戏详情页添加快捷跳转按钮，连接到小黑盒和SteamDB，帮助用户快速获取更多游戏相关信息和数据分析
 // @author          Mr.Wan
 // @homepageURL     https://github.com/wanbage8/SteamPlus
