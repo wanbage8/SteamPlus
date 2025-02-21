@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name            Steam增强器
 // @namespace       http://tampermonkey.net/
-// @version         1.3.1
+// @version         1.4
 // @description     该脚本能够放大Steam平台的大部分界面元素，提升阅读和操作体验；在CSGO社区市场详情页显示Buff平台的价格对比并提供跳转链接，方便用户快速查看和购买；同时在游戏详情页添加快捷跳转按钮，连接到小黑盒和SteamDB，帮助用户快速获取更多游戏相关信息和数据分析
 // @author          Mr.Wan
 // @homepageURL     https://github.com/wanbage8/SteamPlus
@@ -15,6 +15,7 @@
 // @connect         buff.163.com
 // @connect         api.steampowered.com
 // @connect         steamcharts.com
+// @connect         xiaoheihe.cn
 // @downloadURL     https://update.greasyfork.org/scripts/524321/%E4%BC%98%E5%8C%96Steam%E7%95%8C%E9%9D%A2.user.js
 // @updateURL       https://update.greasyfork.org/scripts/524321/%E4%BC%98%E5%8C%96Steam%E7%95%8C%E9%9D%A2.meta.js
 // ==/UserScript==
@@ -973,12 +974,14 @@
 		}
 	}
 
+
 	if (appId && headerStandard) {
 		// 跳转启发来自 https://www.xiaoheihe.cn/app/bbs/link/144510651
 		headerStandard.insertAdjacentHTML("afterbegin", `<div class="apphub_OtherSiteInfo" style="margin-left: 10px" title="跳转到小黑盒"><a class="btnv6_blue_hoverfade btn_medium" href="https://www.xiaoheihe.cn/app/topic/game/pc/${appId[1]}"><img style="width: 29px;height: 29px;" src="https://imgheybox.max-c.com/oa/2024/11/27/3912834da32296bd985281f8944e75fc.ico" alt="小黑盒"></a></div>`)
 		headerStandard.insertAdjacentHTML("afterbegin", `<div class="apphub_OtherSiteInfo" style="margin-left: 10px" title="跳转到SteamDB"><a class="btnv6_blue_hoverfade btn_medium" href="https://steamdb.info/app/${appId[1]}"><img style="width: 29px;height: 29px;" src="https://steamdb.info/static/logos/vector_prefers_schema.svg" alt="SteamDB"></a></div>`)
 		let userPlay = document.querySelector(".glance_ctn_responsive_left")
-		userPlay.insertAdjacentHTML("afterbegin", `<div class="dev_row" style="margin-top: 10px"><div class="subtitle column">在线人数:</div><div class="summary column" id="user-num" style="color: #8f98a0">查询中...</div></div><div class="dev_row"><div class="subtitle column">今日峰值:</div><div class="summary column user-num-max" style="color: #8f98a0">查询中...</div></div><div class="dev_row"><div class="subtitle column">历史峰值:</div><div class="summary column user-num-max" style="color: #8f98a0">查询中...</div></div>`)
+		userPlay.insertAdjacentHTML("afterbegin", `<div class="dev_row" style="margin-top: 10px"><div class="subtitle column">在线人数:</div><div class="summary column" id="user-num" style="color: #8f98a0">查询中...</div></div><div class="dev_row"><div class="subtitle column">今日峰值:</div><div class="summary column user-num-max" style="color: #8f98a0">查询中...</div></div><div class="dev_row"><div class="subtitle column">历史峰值:</div><div class="summary column user-num-max" style="color: #8f98a0">查询中...</div></div><div class="dev_row"><div class="subtitle column">平均游戏时间:</div><div class="summary column user-num-max-hey" style="color: #8f98a0">查询中...</div></div>`)
+		let userPlayDom = document.querySelectorAll(".user-num-max")
 
 		// 当前游戏在线人数
 		GM_xmlhttpRequest({
@@ -995,7 +998,7 @@
 
 			},
 			onerror: function (error) {
-				console.error(error)
+				throw new Error(error)
 				showMsg("#user-num", "查询结果错误")
 			}
 		});
@@ -1008,17 +1011,38 @@
 				try {
 					let data = res.responseText
 					userPlayArr = data.match(/(?<="num">)(\d+)/g)
-					let userPlayDom = document.querySelectorAll(".user-num-max")
 					userPlayDom[0].textContent = numberPro(+userPlayArr[1])
 					userPlayDom[1].textContent = numberPro(+userPlayArr[2])
 				} catch (e) {
 					showMsg(".user-num-max", "查询失败")
-					console.log(e)
+					throw new Error(e)
 				}
 			},
 			onerror: function (error) {
-				console.error(error)
+				throw new Error(error)
 				showMsg(".user-num-max", "查询失败")
+			}
+		});
+
+		GM_xmlhttpRequest({
+			method: "GET",
+			url: `https://www.xiaoheihe.cn/app/topic/game/pc/${appId[1]}`,
+			onload: function (res) {
+				let heyMsg = document.querySelector(".user-num-max-hey")
+				try {
+					let data = JSON.parse(res.responseXML.getElementById("__NUXT_DATA__").innerText);
+					for (let i = 0; i < data.length; i++) {
+						if (data[i] === "平均游戏时间") {
+							heyMsg.textContent = `${data[i + 1]} 数据来源：小黑盒`
+						}
+					}
+				} catch (e) {
+					showMsg(".user-num-max-hey","查询失败")
+					throw new Error(e)
+				}
+			},
+			onerror: function (error) {
+				throw new Error(error)
 			}
 		});
 
@@ -1037,15 +1061,7 @@
 			let appearance = document.getElementById("largeiteminfo_item_descriptors").firstElementChild.textContent.match(/崭新出厂|略有磨损|久经沙场|破损不堪|战痕累累/)
 			let pageNum = 1
 			let initNum = 1
-
-			// 创建观察器
-			const sliderObserver = new IntersectionObserver((entries) => {
-				let data = entries[0]
-				if (!data.isIntersecting) return
-				if (!csgoId) return
-				getBUFFList()
-			})
-			sliderObserver.observe(BUFFloading)
+			let sliderObserver
 
 			csgoName = communityName.innerText
 			if (appearance) csgoName += appearance[0]
@@ -1074,13 +1090,20 @@
 					console.log(data)
 					if (data.code !== "OK") {
 						showMsg(".BUFF-msg", `请求ID异常，异常信息：${data.error} 状态码：${data.code}`, data)
-						sliderObserver.unobserve(BUFFloading)
 						return
 					} else if (data.data.items.length === 0) {
 						showMsg(".BUFF-msg", `未查询到该商品`)
-						sliderObserver.unobserve(BUFFloading)
 						return;
 					}
+
+					// 创建观察器
+					sliderObserver = new IntersectionObserver((entries) => {
+						let data = entries[0]
+						if (!data.isIntersecting) return
+						if (!csgoId) return
+						getBUFFList()
+					})
+					sliderObserver.observe(BUFFloading)
 
 					if (data.data.items.length === 1 && data.data.items[0].id) {
 						csgoId = data.data.items[0].id
@@ -1093,23 +1116,22 @@
 								break;
 							} else if (i === data.data.items.length - 1) {
 								showMsg("#BUFF-tablet-msg", `<th colspan="5">价格异常</th>`)
-								dom += `<div class="market_listing_row market_recent_listing_row"><div class="market_listing_item_img_container"><img src="${index?.img_src || index.goods_info.icon_url}" onerror="this.src=document.querySelector('.market_listing_largeimage img').src" style="border-color: var(--csgoColor);" class="market_listing_item_img economy_item_hoverable" alt=""></div><div class="market_listing_price_listings_block"><div class="market_listing_right_cell market_listing_action_buttons"><div class="market_listing_buy_button"><a href="https://buff.163.com/goods/${index.id}"class="item_market_action_button btn_green_white_innerfade btn_small"><span>跳转到BUFF</span></a></div></div><div class="market_listing_right_cell market_listing_their_price"><span class="market_table_value"><span class="market_listing_price market_listing_price_with_fee price-Buff ">¥ ${index.price || index.sell_reference_price}</span><br></span></div><div class="market_listing_right_cell" style="width: 220px;"><div class="market_listing_row_action" style="margin: 0">磨损度：${index.asset_info?.paintwear || "暂无"}<div class="wear-pointer"><div class="wear-pointer-icon" style="left: ${+index.asset_info?.paintwear || "0" * 100}%"></div></div><div class="progress" style="margin-bottom: 5px;"><div class="progress-bar progress-bar-fn" style="width: 7%;" title="崭新出厂"></div><div class="progress-bar progress-bar-success" style="width: 8%;" title="略有磨损"></div><div class="progress-bar progress-bar-warning" style="width: 23%;" title="久经沙场"></div><div class="progress-bar progress-bar-danger" style="width: 7%;" title="破损不堪"></div><div class="progress-bar progress-bar-bs" style="width: 55%;" title="战痕累累"></div></div></div></div></div><div class="market_listing_item_name_block"><span class="market_listing_item_name economy_item_hoverable" style="color: var(--csgoColor);">${index.name}</span><br><div class="market_listing_row_details economy_item_hoverable"><br><div class="sticker_info sticker_infoBUFF" style="width:100px; margin:4px; padding:8px;">${index.sell_num}件在售</div></div></div></div>`
+								dom += `<div class="market_listing_row market_recent_listing_row"><div class="market_listing_item_img_container"><img src="${index?.img_src || index.goods_info.icon_url}" onerror="this.src=document.querySelector('.market_listing_largeimage img').src" style="border-color: var(--csgoColor);" class="market_listing_item_img economy_item_hoverable" alt=""></div><div class="market_listing_price_listings_block"><div class="market_listing_right_cell market_listing_action_buttons"><div class="market_listing_buy_button"><a href="https://buff.163.com/goods/${index.id}"class="item_market_action_button btn_green_white_innerfade btn_small"><span>跳转到BUFF</span></a></div></div><div class="market_listing_right_cell market_listing_their_price"><span class="market_table_value"><span class="market_listing_price market_listing_price_with_fee price-Buff ">¥ ${index.price || index.sell_reference_price}</span><br></span></div><div class="market_listing_right_cell" style="width: 220px;"><div class="market_listing_row_action" style="margin: 0">磨损度：${index.asset_info?.paintwear || "暂无"}<div class="wear-pointer"><div class="wear-pointer-icon" style="left: ${+index.asset_info?.paintwear * 100 || "0"}%"></div></div><div class="progress" style="margin-bottom: 5px;"><div class="progress-bar progress-bar-fn" style="width: 7%;" title="崭新出厂"></div><div class="progress-bar progress-bar-success" style="width: 8%;" title="略有磨损"></div><div class="progress-bar progress-bar-warning" style="width: 23%;" title="久经沙场"></div><div class="progress-bar progress-bar-danger" style="width: 7%;" title="破损不堪"></div><div class="progress-bar progress-bar-bs" style="width: 55%;" title="战痕累累"></div></div></div></div></div><div class="market_listing_item_name_block"><span class="market_listing_item_name economy_item_hoverable" style="color: var(--csgoColor);">${index.name}</span><br><div class="market_listing_row_details economy_item_hoverable"><br><div class="sticker_info sticker_infoBUFF" style="width:100px; margin:4px; padding:8px;">${index.sell_num}件在售</div></div></div></div>`
 								BUFFcontent.insertAdjacentHTML("beforeend", dom)
 								sliderObserver.unobserve(BUFFloading)
 								BUFFloading.remove()
 								return;
 							}
-							dom += `<div class="market_listing_row market_recent_listing_row"><div class="market_listing_item_img_container"><img src="${index?.img_src || index.goods_info.icon_url}" onerror="this.src=document.querySelector('.market_listing_largeimage img').src" style="border-color: var(--csgoColor);" class="market_listing_item_img economy_item_hoverable" alt=""></div><div class="market_listing_price_listings_block"><div class="market_listing_right_cell market_listing_action_buttons"><div class="market_listing_buy_button"><a href="https://buff.163.com/goods/${index.id}"class="item_market_action_button btn_green_white_innerfade btn_small"><span>跳转到BUFF</span></a></div></div><div class="market_listing_right_cell market_listing_their_price"><span class="market_table_value"><span class="market_listing_price market_listing_price_with_fee price-Buff ">¥ ${index.price || index.sell_reference_price}</span><br></span></div><div class="market_listing_right_cell" style="width: 220px;"><div class="market_listing_row_action" style="margin: 0">磨损度：${index.asset_info?.paintwear || "暂无"}<div class="wear-pointer"><div class="wear-pointer-icon" style="left: ${+index.asset_info?.paintwear || "0" * 100}%"></div></div><div class="progress" style="margin-bottom: 5px;"><div class="progress-bar progress-bar-fn" style="width: 7%;" title="崭新出厂"></div><div class="progress-bar progress-bar-success" style="width: 8%;" title="略有磨损"></div><div class="progress-bar progress-bar-warning" style="width: 23%;" title="久经沙场"></div><div class="progress-bar progress-bar-danger" style="width: 7%;" title="破损不堪"></div><div class="progress-bar progress-bar-bs" style="width: 55%;" title="战痕累累"></div></div></div></div></div><div class="market_listing_item_name_block"><span class="market_listing_item_name economy_item_hoverable" style="color: var(--csgoColor);">${index.name}</span><br><div class="market_listing_row_details economy_item_hoverable"><br><div class="sticker_info sticker_infoBUFF" style="width:100px; margin:4px; padding:8px;">${index.sell_num}件在售</div></div></div></div>`
+							dom += `<div class="market_listing_row market_recent_listing_row"><div class="market_listing_item_img_container"><img src="${index?.img_src || index.goods_info.icon_url}" onerror="this.src=document.querySelector('.market_listing_largeimage img').src" style="border-color: var(--csgoColor);" class="market_listing_item_img economy_item_hoverable" alt=""></div><div class="market_listing_price_listings_block"><div class="market_listing_right_cell market_listing_action_buttons"><div class="market_listing_buy_button"><a href="https://buff.163.com/goods/${index.id}"class="item_market_action_button btn_green_white_innerfade btn_small"><span>跳转到BUFF</span></a></div></div><div class="market_listing_right_cell market_listing_their_price"><span class="market_table_value"><span class="market_listing_price market_listing_price_with_fee price-Buff ">¥ ${index.price || index.sell_reference_price}</span><br></span></div><div class="market_listing_right_cell" style="width: 220px;"><div class="market_listing_row_action" style="margin: 0">磨损度：${index.asset_info?.paintwear || "暂无"}<div class="wear-pointer"><div class="wear-pointer-icon" style="left: ${+index.asset_info?.paintwear * 100 || "0"}%"></div></div><div class="progress" style="margin-bottom: 5px;"><div class="progress-bar progress-bar-fn" style="width: 7%;" title="崭新出厂"></div><div class="progress-bar progress-bar-success" style="width: 8%;" title="略有磨损"></div><div class="progress-bar progress-bar-warning" style="width: 23%;" title="久经沙场"></div><div class="progress-bar progress-bar-danger" style="width: 7%;" title="破损不堪"></div><div class="progress-bar progress-bar-bs" style="width: 55%;" title="战痕累累"></div></div></div></div></div><div class="market_listing_item_name_block"><span class="market_listing_item_name economy_item_hoverable" style="color: var(--csgoColor);">${index.name}</span><br><div class="market_listing_row_details economy_item_hoverable"><br><div class="sticker_info sticker_infoBUFF" style="width:100px; margin:4px; padding:8px;">${index.sell_num}件在售</div></div></div></div>`
 						}
 					}
-					steamPrice = steamPrice ? +steamPrice.innerText.replace(/[^\d.]/g, "") : +data.data?.goods_infos?.csgoId?.steam_price_cny || 0
+					steamPrice = steamPrice ? +steamPrice.innerText.replace(/[^\d.]/g, "") : +data.data?.goods_infos?.csgoId?.steam_price_cny || document.querySelectorAll(".market_commodity_orders_header_promote")[1]?.textContent.replace(/[^\d.]/g, "") || 0
 					// 拿到ID发送商品列表请求
 					getBUFFList()
 				},
 				onerror(response) {
-					console.error(response)
+					throw new Error(response)
 					showMsg(".BUFF-msg", `查询ID数据错误 请查看控制台`)
-					sliderObserver.unobserve(BUFFloading)
 				}
 			});
 
@@ -1139,7 +1161,7 @@
 						let sticker
 						for (let i = 0; i < data.data.items.length; i++) {
 							let index = data.data.items[i]
-							BUFFcontent.insertAdjacentHTML("beforeend", `<div class="market_listing_row market_recent_listing_row"><div class="market_listing_item_img_container"><img src="${index.img_src}" style="border-color: var(--csgoColor); background: url('${data.data.src_url_background}');background-size: 100% 100%" class="market_listing_item_img economy_item_hoverable" alt=""></div><div class="market_listing_price_listings_block"><div class="market_listing_right_cell market_listing_action_buttons"><div class="market_listing_buy_button"><a data-appid="${index.asset_info?.appid}" data-assetid="${index.asset_info?.assetid}" data-sell_order_id="${index.id}" data-classid="${index.asset_info?.classid}" data-contextid="${index.asset_info?.contextid}" data-instanceid="${index.asset_info?.instanceid}" class="getBUFF item_market_action_button btn_green_white_innerfade btn_small"><span>跳转到BUFF</span></a></div></div><div class="market_listing_right_cell market_listing_their_price"><span class="market_table_value"><span class="market_listing_price market_listing_price_with_fee price-Buff">¥ ${index.price}</span><br></span></div><div class="market_listing_right_cell" style="width: 220px;"><div class="market_listing_row_action" style="margin: 0">磨损度：${index.asset_info?.paintwear || "暂无"}<div class="wear-pointer"><div class="wear-pointer-icon" style="left: ${+index.asset_info?.paintwear || "0" * 100}%"></div></div><div class="progress" style="margin-bottom: 5px;"><div class="progress-bar progress-bar-fn" style="width: 7%;" title="崭新出厂"></div><div class="progress-bar progress-bar-success" style="width: 8%;" title="略有磨损"></div><div class="progress-bar progress-bar-warning" style="width: 23%;" title="久经沙场"></div><div class="progress-bar progress-bar-danger" style="width: 7%;" title="破损不堪"></div><div class="progress-bar progress-bar-bs" style="width: 55%;" title="战痕累累"></div></div></div></div></div><div class="market_listing_item_name_block"><span class="market_listing_item_name economy_item_hoverable" style="color: var(--csgoColor);">${data.data.goods_infos[csgoId].short_name}（${csgoAbrasion(+index.asset_info?.paintwear)}）</span><div style="line-height: 35px;">${index.asset_info.info?.fraudwarnings ? "❗" + index.asset_info.info.fraudwarnings : ""}</div><div class="market_listing_row_details economy_item_hoverable"><div class="sticker_info sticker_infoBUFF" style="width:100px; margin:4px; padding:8px;"></div></div></div></div>`)
+							BUFFcontent.insertAdjacentHTML("beforeend", `<div class="market_listing_row market_recent_listing_row"><div class="market_listing_item_img_container"><img src="${index.img_src}" style="border-color: var(--csgoColor); background: url('${data.data.src_url_background}');background-size: 100% 100%" class="market_listing_item_img economy_item_hoverable" alt=""></div><div class="market_listing_price_listings_block"><div class="market_listing_right_cell market_listing_action_buttons"><div class="market_listing_buy_button"><a data-appid="${index.asset_info?.appid}" data-assetid="${index.asset_info?.assetid}" data-sell_order_id="${index.id}" data-classid="${index.asset_info?.classid}" data-contextid="${index.asset_info?.contextid}" data-instanceid="${index.asset_info?.instanceid}" class="getBUFF item_market_action_button btn_green_white_innerfade btn_small"><span>跳转到BUFF</span></a></div></div><div class="market_listing_right_cell market_listing_their_price"><span class="market_table_value"><span class="market_listing_price market_listing_price_with_fee price-Buff">¥ ${index.price}</span><br></span></div><div class="market_listing_right_cell" style="width: 220px;"><div class="market_listing_row_action" style="margin: 0">磨损度：${index.asset_info?.paintwear || "暂无"}<div class="wear-pointer"><div class="wear-pointer-icon" style="left: ${+index.asset_info?.paintwear * 100 || "0"}%"></div></div><div class="progress" style="margin-bottom: 5px;"><div class="progress-bar progress-bar-fn" style="width: 7%;" title="崭新出厂"></div><div class="progress-bar progress-bar-success" style="width: 8%;" title="略有磨损"></div><div class="progress-bar progress-bar-warning" style="width: 23%;" title="久经沙场"></div><div class="progress-bar progress-bar-danger" style="width: 7%;" title="破损不堪"></div><div class="progress-bar progress-bar-bs" style="width: 55%;" title="战痕累累"></div></div></div></div></div><div class="market_listing_item_name_block"><span class="market_listing_item_name economy_item_hoverable" style="color: var(--csgoColor);">${data.data.goods_infos[csgoId].short_name}（${csgoAbrasion(+index.asset_info?.paintwear)}）</span><div style="line-height: 35px;">${index.asset_info.info?.fraudwarnings ? "❗" + index.asset_info.info.fraudwarnings : ""}</div><div class="market_listing_row_details economy_item_hoverable"><div class="sticker_info sticker_infoBUFF" style="width:100px; margin:4px; padding:8px;"></div></div></div></div>`)
 							BUFFtable.insertAdjacentHTML("beforeend", `<tr><td align="right" class=""><a href="javascript:" data-index="${initNum - 1}">${initNum}</a></td><td align="right">${steamPrice}</td><td align="right">${index.price}</td><td align="right">${(steamPrice - index.price).toFixed(2)}</td><td>${((1 - index.price / steamPrice) * 100).toFixed(2) + "%"}</td></tr>`)
 							if (index.asset_info.info?.stickers.length !== 0) {
 								sticker = document.querySelectorAll(".sticker_infoBUFF")[initNum - 1]
@@ -1173,7 +1195,7 @@
 						pageNum++
 					},
 					onerror(response) {
-						console.error(response)
+						throw new Error(response)
 						showMsg(".BUFF-msg", `列表数据错误 请查看控制台`)
 						sliderObserver.unobserve(BUFFloading)
 					}
