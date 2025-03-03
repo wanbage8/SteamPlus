@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name            Steam增强器
 // @namespace       http://tampermonkey.net/
-// @version         1.4
+// @version         1.5
 // @description     该脚本能够放大Steam平台的大部分界面元素，提升阅读和操作体验；在CSGO社区市场详情页显示Buff平台的价格对比并提供跳转链接，方便用户快速查看和购买；同时在游戏详情页添加快捷跳转按钮，连接到小黑盒和SteamDB，帮助用户快速获取更多游戏相关信息和数据分析
 // @author          Mr.Wan
 // @homepageURL     https://github.com/wanbage8/SteamPlus
@@ -467,7 +467,47 @@
 			top: -50%;
 			transform: translateY(-50%);
 			opacity: 0;
-
+		}
+		
+		#steam-date {
+			position: absolute;
+			transform: translateY(-100%);
+			display: flex;
+			align-items: center;
+			user-select: none;
+		}
+		
+		#menu{
+            position: absolute;
+            height: 0;
+            overflow-y: scroll;
+            top: 100%;
+            background-color: #ffffff8a;
+            backdrop-filter: blur(4px);
+            padding: 0;
+            color: #343434;
+            line-height: 25px;
+            cursor: pointer;
+            z-index: 999;
+		}
+		#menu div{
+			white-space: nowrap;
+		}
+		
+		#menu div:hover{
+			color:#101010
+		}
+		
+		#menu-option{
+			border: #000 1px solid;
+			padding: 3px;
+            cursor: pointer;
+            background-color: #ffffff8a;
+		}
+		
+		#menu-option:hover #menu{
+            height: 295px;
+            padding: 5px;
 		}
 `)
 
@@ -974,7 +1014,7 @@
 		}
 	}
 
-
+	// 游戏详情页
 	if (appId && headerStandard) {
 		// 跳转启发来自 https://www.xiaoheihe.cn/app/bbs/link/144510651
 		headerStandard.insertAdjacentHTML("afterbegin", `<div class="apphub_OtherSiteInfo" style="margin-left: 10px" title="跳转到小黑盒"><a class="btnv6_blue_hoverfade btn_medium" href="https://www.xiaoheihe.cn/app/topic/game/pc/${appId[1]}"><img style="width: 29px;height: 29px;" src="https://imgheybox.max-c.com/oa/2024/11/27/3912834da32296bd985281f8944e75fc.ico" alt="小黑盒"></a></div>`)
@@ -1027,17 +1067,23 @@
 		GM_xmlhttpRequest({
 			method: "GET",
 			url: `https://www.xiaoheihe.cn/app/topic/game/pc/${appId[1]}`,
+			headers: {
+				"content-type": "application/json",
+				"Referer": "https://www.xiaoheihe.cn/",
+				"origin": "https://www.xiaoheihe.cn"
+			},
 			onload: function (res) {
 				let heyMsg = document.querySelector(".user-num-max-hey")
+				let heyBoxHtml = document.createRange().createContextualFragment(res.responseText);
 				try {
-					let data = JSON.parse(res.responseXML.getElementById("__NUXT_DATA__").innerText);
+					let data = JSON.parse(heyBoxHtml.getElementById("__NUXT_DATA__").innerText);
 					for (let i = 0; i < data.length; i++) {
 						if (data[i] === "平均游戏时间") {
 							heyMsg.textContent = `${data[i + 1]} 数据来源：小黑盒`
 						}
 					}
 				} catch (e) {
-					showMsg(".user-num-max-hey","查询失败")
+					showMsg(".user-num-max-hey", "查询失败")
 					throw new Error(e)
 				}
 			},
@@ -1046,6 +1092,7 @@
 			}
 		});
 
+		// steam市场增强
 	} else if (community && communityName) {
 		// 延时加载 等待元素加载完成
 		setTimeout(function () {
@@ -1085,6 +1132,10 @@
 			GM_xmlhttpRequest({
 				method: "GET",
 				url: `https://buff.163.com/api/market/goods?game=csgo&page_num=1&search=${csgoName}&use_suggestion=0&_=1738903063922`,
+				headers: {
+					"Referer": "https://buff.163.com/market/csgo",
+					"Accept": "application/json, text/javascript, */*; q=0.01"
+				},
 				onload: function (response) {
 					let data = JSON.parse(response.response)
 					console.log(data)
@@ -1139,6 +1190,10 @@
 				GM_xmlhttpRequest({
 					method: "GET",
 					url: `https://buff.163.com/api/market/goods/sell_order?game=csgo&goods_id=${csgoId}&page_num=${pageNum}&mode=&allow_tradable_cooldown=1`,
+					headers: {
+						"Referer": "https://buff.163.com/",
+						"Accept": "application/json, text/javascript, */*; q=0.01"
+					},
 					onload: function (response) {
 						let data = JSON.parse(response.response)
 						console.log(data)
@@ -1202,5 +1257,240 @@
 				})
 			}
 		}, 500)
+	}
+
+	function upSteamDate() {
+		let steamMenu = document.querySelector(".store_nav_bg")
+		if (!steamMenu) return
+
+		let timeStamp = new Date().getTime()
+		let state = JSON.parse(localStorage.getItem("menu"))
+		let menuData = []
+		const steamDate = {
+			"0": {
+				"name": "即时战略游戏节",
+				"date": "1月21日 - 1月29日",
+				"timeStampStart": 1737396000000,
+				"timeStampEnd": 1738087200000
+			},
+			"1": {
+				"name": "挂机游戏节",
+				"date": "2月4日 - 2月11日",
+				"timeStampStart": 1738605600000,
+				"timeStampEnd": 1739210400000
+			},
+			"2": {
+				"name": "沙发合作游戏节",
+				"date": "2月11日 - 2月18日",
+				"timeStampStart": 1739210400000,
+				"timeStampEnd": 1739815200000
+			},
+			"3": {
+				"name": "Steam新品节-2025年2月版",
+				"date": "2月25日 - 3月4日",
+				"timeStampStart": 1740420000000,
+				"timeStampEnd": 1741024800000
+			},
+			"4": {
+				"name": "视觉小说游戏节",
+				"date": "3月4日 - 3月11日",
+				"timeStampStart": 1741024800000,
+				"timeStampEnd": 1741629600000
+			},
+			"5": {
+				"name": "2025年Steam春季特卖",
+				"date": "3月14日 - 3月21日",
+				"timeStampStart": 1741888800000,
+				"timeStampEnd": 1742493600000
+			},
+			"6": {
+				"name": "城市营造及殖民模拟游戏节",
+				"date": "3月25日 - 4月1日",
+				"timeStampStart": 1742839200000,
+				"timeStampEnd": 1743444000000
+			},
+			"7": {
+				"name": "推箱子游戏节",
+				"date": "4月22日 - 4月29日",
+				"timeStampStart": 1745258400000,
+				"timeStampEnd": 1745863200000
+			},
+			"8": {
+				"name": "战争游戏节",
+				"date": "4月29日 - 5月6日",
+				"timeStampStart": 1745863200000,
+				"timeStampEnd": 1746468000000
+			},
+			"9": {
+				"name": "生物收集游戏节",
+				"date": "5月13日 - 5月20日",
+				"timeStampStart": 1747072800000,
+				"timeStampEnd": 1747677600000
+			},
+			"10": {
+				"name": "僵尸大战吸血鬼游戏节",
+				"date": "5月27日 - 6月3日",
+				"timeStampStart": 1748282400000,
+				"timeStampEnd": 1748887200000
+			},
+			"11": {
+				"name": "Steam新品节-2025年6月版",
+				"date": "6月10日 - 6月17日",
+				"timeStampStart": 1749492000000,
+				"timeStampEnd": 1750096800000
+			},
+			"12": {
+				"name": "钓鱼游戏节",
+				"date": "6月17日 - 6月24日",
+				"timeStampStart": 1750096800000,
+				"timeStampEnd": 1750701600000
+			},
+			"13": {
+				"name": "2025年Steam夏日特卖",
+				"date": "6月27日 - 7月11日",
+				"timeStampStart": 1750960800000,
+				"timeStampEnd": 1752170400000
+			},
+			"14": {
+				"name": "自动化游戏节",
+				"date": "7月15日 - 7月22日",
+				"timeStampStart": 1752516000000,
+				"timeStampEnd": 1753120800000
+			},
+			"15": {
+				"name": "竞速游戏节",
+				"date": "7月29日 - 8月5日",
+				"timeStampStart": 1753725600000,
+				"timeStampEnd": 1754330400000
+			},
+			"16": {
+				"name": "4X 游戏节",
+				"date": "8月12日 - 8月19日",
+				"timeStampStart": 1754935200000,
+				"timeStampEnd": 1755540000000
+			},
+			"17": {
+				"name": "第三人称射击游戏节",
+				"date": "8月26日 - 9月2日",
+				"timeStampStart": 1756144800000,
+				"timeStampEnd": 1756749600000
+			},
+			"18": {
+				"name": "政治模拟游戏节",
+				"date": "9月9日 - 9月16日",
+				"timeStampStart": 1757354400000,
+				"timeStampEnd": 1757959200000
+			},
+			"19": {
+				"name": "2025年Steam秋季特卖",
+				"date": "9月30日 - 10月7日",
+				"timeStampStart": 1759168800000,
+				"timeStampEnd": 1759773600000
+			},
+			"20": {
+				"name": "Steam 新品节 - 2025 年 10 月版",
+				"date": "10月14日 - 10月21日",
+				"timeStampStart": 1760378400000,
+				"timeStampEnd": 1760983200000
+			},
+			"21": {
+				"name": "Steam尖叫游戏节4",
+				"date": "10月28日 - 11月4日",
+				"timeStampStart": 1761588000000,
+				"timeStampEnd": 1762192800000
+			},
+			"22": {
+				"name": "动物游戏节",
+				"date": "11月11日 - 11月18日",
+				"timeStampStart": 1762797600000,
+				"timeStampEnd": 1763402400000
+			},
+			"23": {
+				"name": "体育游戏节",
+				"date": "12月9日 - 12月16日",
+				"timeStampStart": 1765216800000,
+				"timeStampEnd": 1765821600000
+			},
+			"24": {
+				"name": "2025 年 Steam 冬季特卖",
+				"date": "12月19日 - 2026年1月6日",
+				"timeStampStart": 1766080800000,
+				"timeStampEnd": 1767636000000
+			}
+		}
+
+		steamMenu.insertAdjacentHTML("afterbegin", `<div id="steam-date"><span id="menu-option"><span id="menu-msg" data-index="5">2025年Steam春季特卖✨</span><div id="menu"></div></span><span id="steam-date-time" style="margin: 0 5px"></span><span id="steam-date-msg" style="flex-shrink: 0"></span></div>`)
+		let menu = document.getElementById("menu")
+		let steamOption = document.getElementById("steam-option")
+		let menuMsg = document.getElementById("menu-msg")
+		let steamDateTime = document.getElementById("steam-date-time")
+		let steamDateMsg = document.getElementById("steam-date-msg")
+		let intervalId = null
+		for (let i = 0; i < Object.keys(steamDate).length; i++) {
+			if (steamDate[i].timeStampStart <= timeStamp) {
+				if (steamDate[i].timeStampEnd >= timeStamp) {
+					menu.insertAdjacentHTML("beforeend", `<div data-value="${steamDate[i].name}" data-index="${i}">${steamDate[i].name}-正在进行</div>`)
+					menuMsg.innerText = steamDate[i].name
+					menuMsg.dataset.index = i
+				} else menu.insertAdjacentHTML("beforeend", `<div data-value="${steamDate[i].name}" style="text-decoration: line-through" data-index="${i}">${steamDate[i].name}-已结束</div>`)
+			} else menu.insertAdjacentHTML("beforeend", `<div data-value="${steamDate[i].name}" data-index="${i}">${steamDate[i].name}</div>`)
+		}
+
+		if (state) {
+			menuMsg.innerText = state[0]
+			menuMsg.dataset.index = state[1]
+		}
+		upMenuDate(menuMsg.dataset.index)
+
+		menu.addEventListener("click", (e) => {
+			let ele = e.target
+			if (!ele.dataset.value) return
+			menuData = [ele.dataset.value, ele.dataset.index]
+			menuMsg.innerText = menuData[0]
+			menuMsg.dataset.index = menuData[1]
+			menuMsg.style.textDecoration = ele.style.textDecoration ? "line-through" : ""
+			localStorage.setItem("menu", JSON.stringify(menuData))
+			upMenuDate(menuData[1])
+		})
+
+
+		function upMenuDate(menuDataIndex) {
+			let steamDateIndex = steamDate[menuDataIndex];
+			steamDateMsg.innerText = steamDateIndex.date
+
+			if (intervalId !== null) clearInterval(intervalId);
+
+			intervalId = setInterval(() => {
+				const time = getDate();
+				let timeDifference = (steamDateIndex.timeStampStart - time.timeStatus) / 1000
+				if (timeDifference >= 0) {
+					steamDateTime.innerText = `还剩${parseInt(timeDifference / 86400)}天${parseInt((timeDifference % (24 * 60 * 60)) / (60 * 60))}小时${parseInt(timeDifference % 3600 / 60)}分${parseInt(timeDifference % 60)}秒`
+				} else {
+					if (steamDateIndex.timeStampEnd >= time.timeStatus) {
+						let timeDifferenceEnd = (steamDateIndex.timeStampEnd - time.timeStatus) / 1000
+						steamDateTime.innerText = `还剩${parseInt(timeDifferenceEnd / 86400)}天${parseInt((timeDifferenceEnd % (24 * 60 * 60)) / (60 * 60))}小时${parseInt(timeDifferenceEnd % 3600 / 60)}分${parseInt(timeDifferenceEnd % 60)}秒 结束`
+					} else {
+						steamDateTime.innerText = `已结束`
+					}
+				}
+			}, 1000);
+		}
+	}
+
+	upSteamDate()
+
+	/**
+	 * 获取现在的时间
+	 * @return {Object} - 时间对象
+	 * */
+	function getDate() {
+		let date = new Date()
+		return {
+			year: date.getFullYear(),
+			month: date.getMonth() + 1,
+			date: date.getDate(),
+			sec: date.getSeconds(),
+			timeStatus: date.getTime()
+		}
 	}
 })();
