@@ -1419,7 +1419,7 @@
 			}
 		}
 
-		steamMenu.insertAdjacentHTML("afterbegin", `<div id="steam-date"><span id="menu-option"><span id="menu-msg" data-index="5">2025年Steam春季特卖✨</span><div id="menu"></div></span><span id="steam-date-time" style="margin: 0 5px"></span><span id="steam-date-msg" style="flex-shrink: 0"></span></div>`)
+		steamMenu.insertAdjacentHTML("afterbegin", `<div id="steam-date"><span id="menu-option"><span id="menu-msg" style="color: #f5f5f5;" data-index="5">2025年Steam春季特卖✨</span><div id="menu"></div></span><span id="steam-date-time" style="margin: 0 5px"></span><span id="steam-date-msg" style="flex-shrink: 0"></span></div>`)
 		let menu = document.getElementById("menu")
 		let steamOption = document.getElementById("steam-option")
 		let menuMsg = document.getElementById("menu-msg")
