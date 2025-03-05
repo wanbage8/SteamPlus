@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name            Steam增强器
 // @namespace       http://tampermonkey.net/
-// @version         1.5
+// @version         1.5.1
 // @description     该脚本能够放大Steam平台的大部分界面元素，提升阅读和操作体验；在CSGO社区市场详情页显示Buff平台的价格对比并提供跳转链接，方便用户快速查看和购买；同时在游戏详情页添加快捷跳转按钮，连接到小黑盒和SteamDB，帮助用户快速获取更多游戏相关信息和数据分析
 // @author          Mr.Wan
 // @homepageURL     https://github.com/wanbage8/SteamPlus
@@ -16,8 +16,8 @@
 // @connect         api.steampowered.com
 // @connect         steamcharts.com
 // @connect         xiaoheihe.cn
-// @downloadURL     https://update.greasyfork.org/scripts/524321/%E4%BC%98%E5%8C%96Steam%E7%95%8C%E9%9D%A2.user.js
-// @updateURL       https://update.greasyfork.org/scripts/524321/%E4%BC%98%E5%8C%96Steam%E7%95%8C%E9%9D%A2.meta.js
+// @downloadURL     https://update.greasyfork.us.kg/scripts/524321/%E4%BC%98%E5%8C%96Steam%E7%95%8C%E9%9D%A2.user.js
+// @updateURL       https://update.greasyfork.us.kg/scripts/524321/%E4%BC%98%E5%8C%96Steam%E7%95%8C%E9%9D%A2.meta.js
 // ==/UserScript==
 
 (function () {
@@ -1079,7 +1079,7 @@
 					let data = JSON.parse(heyBoxHtml.getElementById("__NUXT_DATA__").innerText);
 					for (let i = 0; i < data.length; i++) {
 						if (data[i] === "平均游戏时间") {
-							heyMsg.textContent = `${data[i + 1]} 数据来源：小黑盒`
+							heyMsg.textContent = `${data[i + 1] + '' !== "[object Object]" ? data[i + 1] + " 数据来源：小黑盒" : "暂无"}`
 						}
 					}
 				} catch (e) {
