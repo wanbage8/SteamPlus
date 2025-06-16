@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name            Steam增强器
 // @namespace       http://tampermonkey.net/
-// @version         1.5.1
+// @version         1.5.2
 // @description     该脚本能够放大Steam平台的大部分界面元素，提升阅读和操作体验；在CSGO社区市场详情页显示Buff平台的价格对比并提供跳转链接，方便用户快速查看和购买；同时在游戏详情页添加快捷跳转按钮，连接到小黑盒和SteamDB，帮助用户快速获取更多游戏相关信息和数据分析
 // @author          Mr.Wan
 // @homepageURL     https://github.com/wanbage8/SteamPlus
@@ -16,8 +16,9 @@
 // @connect         api.steampowered.com
 // @connect         steamcharts.com
 // @connect         xiaoheihe.cn
-// @downloadURL     https://update.greasyfork.us.kg/scripts/524321/%E4%BC%98%E5%8C%96Steam%E7%95%8C%E9%9D%A2.user.js
-// @updateURL       https://update.greasyfork.us.kg/scripts/524321/%E4%BC%98%E5%8C%96Steam%E7%95%8C%E9%9D%A2.meta.js
+// @downloadURL     https://update.greasyfork.org/scripts/524321/%E4%BC%98%E5%8C%96Steam%E7%95%8C%E9%9D%A2.user.js
+// @updateURL       https://update.greasyfork.org/scripts/524321/%E4%BC%98%E5%8C%96Steam%E7%95%8C%E9%9D%A2.meta.js
+// @note 2025-06-16 1.5.2 更改快捷键为Ctrl+Alt+X
 // ==/UserScript==
 
 (function () {
@@ -499,10 +500,10 @@
 		}
 		
 		#menu-option{
-			border: #575757 1px solid;
+			border: #000 1px solid;
 			padding: 3px;
             cursor: pointer;
-            background-color: #e5e5e5c7;
+            background-color: #ffffff8a;
 		}
 		
 		#menu-option:hover #menu{
@@ -947,7 +948,7 @@
 
 	let cont = localStorage.getItem("t");
 	if (!cont) {
-		ShowAlertDialog('注意', '按下“Ctrl+Alt+A”键即可呼出Steam大屏Plus菜单', "明白！");
+		ShowAlertDialog('注意', '按下“Ctrl+Alt+X”键即可呼出Steam大屏Plus菜单', "明白！");
 		localStorage.setItem("t", "t")
 	}
 
@@ -1079,7 +1080,7 @@
 					let data = JSON.parse(heyBoxHtml.getElementById("__NUXT_DATA__").innerText);
 					for (let i = 0; i < data.length; i++) {
 						if (data[i] === "平均游戏时间") {
-							heyMsg.textContent = `${data[i + 1] + '' !== "[object Object]" ? data[i + 1] + " 数据来源：小黑盒" : "暂无"}`
+							heyMsg.textContent = `${data[i + 1]} 数据来源：小黑盒`
 						}
 					}
 				} catch (e) {
@@ -1419,7 +1420,7 @@
 			}
 		}
 
-		steamMenu.insertAdjacentHTML("afterbegin", `<div id="steam-date"><span id="menu-option"><span id="menu-msg" style="color: rgb(101 101 101);" data-index="5">2025年Steam春季特卖✨</span><div id="menu"></div></span><span id="steam-date-time" style="margin: 0 5px"></span><span id="steam-date-msg" style="flex-shrink: 0"></span></div>`)
+		steamMenu.insertAdjacentHTML("afterbegin", `<div id="steam-date"><span id="menu-option"><span id="menu-msg" data-index="5">2025年Steam春季特卖✨</span><div id="menu"></div></span><span id="steam-date-time" style="margin: 0 5px"></span><span id="steam-date-msg" style="flex-shrink: 0"></span></div>`)
 		let menu = document.getElementById("menu")
 		let steamOption = document.getElementById("steam-option")
 		let menuMsg = document.getElementById("menu-msg")
