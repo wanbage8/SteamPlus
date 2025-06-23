@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name            Steam增强器
 // @namespace       http://tampermonkey.net/
-// @version         1.5.2
+// @version         1.5.3
 // @description     该脚本能够放大Steam平台的大部分界面元素，提升阅读和操作体验；在CSGO社区市场详情页显示Buff平台的价格对比并提供跳转链接，方便用户快速查看和购买；同时在游戏详情页添加快捷跳转按钮，连接到小黑盒和SteamDB，帮助用户快速获取更多游戏相关信息和数据分析
 // @author          Mr.Wan
 // @homepageURL     https://github.com/wanbage8/SteamPlus
@@ -18,6 +18,7 @@
 // @connect         xiaoheihe.cn
 // @downloadURL     https://update.greasyfork.org/scripts/524321/%E4%BC%98%E5%8C%96Steam%E7%95%8C%E9%9D%A2.user.js
 // @updateURL       https://update.greasyfork.org/scripts/524321/%E4%BC%98%E5%8C%96Steam%E7%95%8C%E9%9D%A2.meta.js
+// @note 2025-06-23 1.5.3 为游戏详情页右侧添加是否支持中文提示
 // @note 2025-06-16 1.5.2 更改快捷键为Ctrl+Alt+X
 // ==/UserScript==
 
@@ -905,7 +906,7 @@
 	})
 
 	document.addEventListener("keyup", function (e) {
-		if (e.altKey && e.keyCode === 65 && e.ctrlKey) {
+		if (e.altKey && e.key === 'x' && e.ctrlKey) {
 			if (num % 2 === 0) {
 				wanBox.style.display = "block"
 			} else {
@@ -1023,6 +1024,7 @@
 		let userPlay = document.querySelector(".glance_ctn_responsive_left")
 		userPlay.insertAdjacentHTML("afterbegin", `<div class="dev_row" style="margin-top: 10px"><div class="subtitle column">在线人数:</div><div class="summary column" id="user-num" style="color: #8f98a0">查询中...</div></div><div class="dev_row"><div class="subtitle column">今日峰值:</div><div class="summary column user-num-max" style="color: #8f98a0">查询中...</div></div><div class="dev_row"><div class="subtitle column">历史峰值:</div><div class="summary column user-num-max" style="color: #8f98a0">查询中...</div></div><div class="dev_row"><div class="subtitle column">平均游戏时间:</div><div class="summary column user-num-max-hey" style="color: #8f98a0">查询中...</div></div>`)
 		let userPlayDom = document.querySelectorAll(".user-num-max")
+		let languageTable = document.getElementById("languageTable")
 
 		// 当前游戏在线人数
 		GM_xmlhttpRequest({
@@ -1093,8 +1095,29 @@
 			}
 		});
 
-		// steam市场增强
+		function isChinese() {
+			let state = "";
+			if (languageTable) {
+				let Chinese = languageTable.firstElementChild.firstElementChild.children[1];
+				if (Chinese.className && Chinese.firstElementChild.textContent.trim() === "简体中文") {
+					state = "不支持简体中文";
+					for (const item of document.getElementsByClassName("ellipsis")) {
+						if (item.textContent.trim() === "繁体中文") {
+							state = "简体×繁体√";
+							break;
+						} else {
+							state = "不支持中文";
+						}
+					}
+				}
+				return state;
+			}
+		}
+
+		userPlay.insertAdjacentHTML("afterbegin", `<div class="dev_row"><div class="subtitle column">支持语言:</div><div class="summary column language" style="color: #8f98a0">${isChinese() || "支持中文"}</div></div>`);
+
 	} else if (community && communityName) {
+		// steam市场增强
 		// 延时加载 等待元素加载完成
 		setTimeout(function () {
 			main.insertAdjacentHTML("beforeend", `<h2 class="market_section_title">网易BUFF</h2><span id="BUFF-total"></span><div id="searchResultsRows" style=""><div class="market_listing_table_header"><div class="market_listing_price_listings_block"><span class="market_listing_right_cell market_listing_action_buttons">跳转到BUFF</span><span class="market_listing_right_cell market_listing_their_price" style="text-align: center">价格</span><span class="market_listing_right_cell market_listing_their_price" style="width: 220px;text-align: center">磨损度</span></div><div><span class="market_listing_header_namespacer"></span>名称</div></div><div id="BUFF-body"></div><div id="content_loading" class="page_content_ctn dark" style="display: block;"><div class="home_page_content more_content" id="BUFF-loading"><div class="LoadingWrapper"><div class="LoadingThrobber"><div class="Bar Bar1"></div><div class="Bar Bar2"></div><div class="Bar Bar3"></div></div><div class="BUFF-msg LoadingText">正在加载更多内容…</div></div></div></div></div><div id="BUFF-up">⬆️</div>`)
